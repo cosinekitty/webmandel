@@ -83,6 +83,35 @@ window.onload = function() {
         }
     }
 
+    function FixAspect(job) {
+        // Adjust the math coordinates outward as needed
+        // so that the screen aspect ratio matches the math aspect ratio.
+        // In other words, a horizontal pixel has the same math value
+        // as a vertical pixel, so the fractal looks correct, not stretched.
+
+        var screenAspect = (job.height-1) / (job.width-1);
+        var mathAspect = (job.y2 - job.y1) / (job.x2 - job.x1);
+        if (screenAspect > mathAspect) {
+            // Expand math coordinates vertically to fit the tall screen.
+            // We want screenAspect = mathAspect,
+            // screenAspect = (job.y2 - job.y1) / (job.x2 - job.x1)
+            // (job.y2 - job.y1) = screenAspect * (job.x2 - job.x1)
+            // Pick the midpoint and add/subtract half the required distance from there.
+            var ymid = (job.y1 + job.y2) / 2;
+            var dy = screenAspect * (job.x2 - job.x1) / 2;
+            job.y1 = ymid - dy;
+            job.y2 = ymid + dy;
+        } else if (mathAspect > screenAspect) {
+            // Expand math coordinates horizontally to fit the wide screen.
+            var xmid = (job.x1 + job.x2) / 2;
+            var dx = (job.y2 - job.y1) / (2 * screenAspect);
+            job.x1 = xmid - dx;
+            job.x2 = xmid + dx;
+        }
+
+        return job;
+    }
+
     function UpdateDisplay() {
         if (engine) {
             engine.terminate();
@@ -94,7 +123,7 @@ window.onload = function() {
 
         var context = graph.getContext('2d');
 
-        SendJob(context, engine, {
+        var job = {
             x1: -2.0,
             y1: -1.2,
             x2: +0.5,
@@ -104,7 +133,9 @@ window.onload = function() {
             width: graph.width,
             height: graph.height,
             limit: 100
-        });
+        };
+
+        SendJob(context, engine, FixAspect(job));
     }
 
     function ResizeGraph() {
