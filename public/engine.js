@@ -14,32 +14,39 @@ function Mandel(cr, ci, limit) {
 }
 
 onmessage = function(e) {
-    /*
-        {
-            x1: -2.0,
-            y1: -2.0,
-            x2: +2.0,
-            y2: +2.0,
-            width: graph.width,
-            height: graph.height,
-            limit: 100
-        }
-    */
+    var n, x, y, hor, ver;
     var job = e.data;
-    postMessage({kind:'debug', text:'Entered onmessage'});
-
-    var x, y, dx, dy, hor, ver;
-    dx = (job.x2 - job.x1) / (job.width - 1);
-    dy = (job.y2 - job.y1) / (job.height - 1);
+    var dx = (job.x2 - job.x1) / (job.width - 1);
+    var dy = (job.y2 - job.y1) / (job.height - 1);
+    var reply = null;
     for (hor=0, x=job.x1; hor < job.width; ++hor, x += dx) {
         for (ver=0, y=job.y1; ver < job.height; ++ver, y += dy) {
-            postMessage({
-                kind: 'dot',
-                hor: hor,
-                ver: ver,
-                limit: job.limit,
-                n: Mandel(x, y, job.limit)
-            });
+            n = Mandel(x, y, job.limit);
+            if (reply) {
+                if (n === reply.n) {
+                    ++reply.count;
+                } else {
+                    postMessage(reply);
+                    reply = null;
+                }
+            }
+
+            if (!reply) {
+                reply = {
+                    kind: 'run',
+                    n: n,
+                    count: 1,
+                    hor: hor,
+                    ver: ver,
+                    limit: job.limit,
+                    width: job.width,
+                    height: job.height
+                };
+            }
         }
+    }
+
+    if (reply) {
+        postMessage(reply);
     }
 }

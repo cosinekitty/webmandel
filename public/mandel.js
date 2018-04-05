@@ -4,6 +4,20 @@ window.onload = function() {
     var graph = document.getElementById('MandelCanvas');
     var PixelsBelowGraph = 0;       // we may display coordinates or some such below the graph later
 
+    function Color(n, limit) {
+        return (n >= limit) ? 'rgb(0,0,0)' : 'rgb(200,200,200)';
+    }
+
+    function DrawRun(context, msg) {
+        context.fillStyle = Color(msg.n, msg.limit);
+
+        var ver = msg.ver;
+        for (var hor=msg.hor; hor < msg.width; ++hor) {
+            context.fillRect(hor, ver, 1, msg.height - ver);
+            ver = 0;
+        }
+    }
+
     function RestartEngine(job) {
         var context = graph.getContext('2d');
         if (engine) {
@@ -13,9 +27,8 @@ window.onload = function() {
         engine.onmessage = function(e) {
             var msg = e.data;
             switch (msg.kind) {
-                case 'dot':
-                    context.fillStyle = (msg.n < msg.limit) ? 'rgb(0,0,0)' : 'rgb(100,100,100)';
-                    context.fillRect(msg.hor, msg.ver, 1, 1);
+                case 'run':
+                    DrawRun(context, msg);
                     break;
 
                 case 'debug':
@@ -24,7 +37,6 @@ window.onload = function() {
             }
         }
         engine.postMessage(job);
-        console.log('Started job');
     }
 
     function UpdateDisplay() {
