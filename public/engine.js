@@ -38,6 +38,8 @@ onmessage = function(e) {
                     count: 1,
                     hor: hor,
                     ver: ver,
+                    top: job.top,
+                    left: job.left,
                     limit: job.limit,
                     width: job.width,
                     height: job.height
