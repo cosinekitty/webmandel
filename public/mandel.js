@@ -20,7 +20,7 @@ window.onload = function() {
 
     function SendJob(context, engine, job) {
         // If the job is large enough, split into quadrants recursively.
-        var MinSize = 20;
+        var MinSize = 50;
         if (job.width >= MinSize && job.height >= MinSize) {
             var leftWidth = Math.floor(job.width / 2);
             var rightWidth = job.width - leftWidth;
