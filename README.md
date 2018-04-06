@@ -1,5 +1,7 @@
 # webmandel
 
+[[https://raw.githubusercontent.com/cosinekitty/webmandel/master/sample/mandelbrot.png|alt=Mandelbrot]]
+
 This is a demo of using Javascript web workers to perform intensive number crunching in the background. 
 It renders the Mandelbrot set to an HTML canvas.
 
