@@ -17,13 +17,25 @@ window.onload = function() {
         ColorTable.push('rgb(0,0,0)');
     }
 
-    function DrawRun(context, msg) {
-        context.fillStyle = ColorTable[msg.n];
+    function DrawPatch(context, msg) {
+        var ver, hor, i, k, tall, count;
 
-        var ver = msg.ver;
-        for (var hor=msg.hor; hor < msg.width; ++hor) {
-            context.fillRect(hor + msg.left, ver + msg.top, 1, msg.height - ver);
-            ver = 0;
+        ver = 0;
+        hor = 0;
+        for (i=0; i < msg.patch.length; i += 2) {
+            context.fillStyle = ColorTable[msg.patch[i]];
+            count = msg.patch[i+1];
+            k = count;
+            while (k > 0) {
+                tall = Math.min(k, msg.height - ver);
+                context.fillRect(hor + msg.left, ver + msg.top, 1, tall);
+                k -= tall;
+                ver += tall;
+                if (ver === msg.height) {
+                    ver = 0;
+                    ++hor;
+                }
+            }
         }
     }
 
@@ -127,7 +139,7 @@ window.onload = function() {
         }
         engine = new Worker('engine.js');
         engine.onmessage = function(e) {
-            DrawRun(context, e.data);
+            DrawPatch(context, e.data);
         }
 
         var context = graph.getContext('2d');

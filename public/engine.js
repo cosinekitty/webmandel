@@ -53,41 +53,40 @@ function Mandel(cr, ci, limit) {
 }
 
 onmessage = function(e) {
+    var nprev;
+    var count = 0;
     var n, x, y, hor, ver;
     var job = e.data;
     var dx = (job.x2 - job.x1) / (job.width - 1);
     var dy = (job.y2 - job.y1) / (job.height - 1);
-    var reply = null;
+
+    var reply = {
+        patch: [],          // [n1, count1, n2, count2, ...]
+        top: job.top,
+        left: job.left,
+        limit: job.limit,
+        width: job.width,
+        height: job.height
+    };
+
     for (hor=0, x=job.x1; hor < job.width; ++hor, x += dx) {
         for (ver=0, y=job.y1; ver < job.height; ++ver, y += dy) {
             n = Mandel(x, y, job.limit);
-            if (reply) {
-                if (n === reply.n) {
-                    ++reply.count;
-                } else {
-                    postMessage(reply);
-                    reply = null;
-                }
+            if (count===0 || n===nprev) {
+                ++count;
+            } else {
+                reply.patch.push(nprev);
+                reply.patch.push(count);
+                count = 1;
             }
-
-            if (!reply) {
-                reply = {
-                    kind: 'run',
-                    n: n,
-                    count: 1,
-                    hor: hor,
-                    ver: ver,
-                    top: job.top,
-                    left: job.left,
-                    limit: job.limit,
-                    width: job.width,
-                    height: job.height
-                };
-            }
+            nprev = n;
         }
     }
 
-    if (reply) {
-        postMessage(reply);
+    if (count > 0) {
+        reply.patch.push(nprev);
+        reply.patch.push(count);
     }
+
+    postMessage(reply);
 }
