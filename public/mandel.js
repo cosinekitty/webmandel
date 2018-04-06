@@ -3,13 +3,22 @@ window.onload = function() {
     var engine;
     var graph = document.getElementById('MandelCanvas');
     var PixelsBelowGraph = 0;       // we may display coordinates or some such below the graph later
+    var ColorTable;
+    var Limit = 300;
 
-    function Color(n, limit) {
-        return (n >= limit) ? 'rgb(0,0,0)' : 'rgb(200,200,200)';
+    function InitColorTable() {
+        ColorTable = [];
+        for (var i=0; i < Limit; ++i) {
+            var r = (i + 50) & 255;
+            var g = (i + 100) & 255;
+            var b = i & 255;
+            ColorTable.push(`rgb(${r},${g},${b})`);
+        }
+        ColorTable.push('rgb(0,0,0)');
     }
 
     function DrawRun(context, msg) {
-        context.fillStyle = Color(msg.n, msg.limit);
+        context.fillStyle = ColorTable[msg.n];
 
         var ver = msg.ver;
         for (var hor=msg.hor; hor < msg.width; ++hor) {
@@ -132,7 +141,7 @@ window.onload = function() {
             top: 0,
             width: graph.width,
             height: graph.height,
-            limit: 100
+            limit: Limit
         };
 
         SendJob(context, engine, FixAspect(job));
@@ -152,6 +161,7 @@ window.onload = function() {
     }
 
     function Init() {
+        InitColorTable();
         ResizeGraph();
         window.addEventListener('resize', ResizeGraph);
     }
