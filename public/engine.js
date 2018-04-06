@@ -1,4 +1,5 @@
 /* engine.js -- Mandelbrot calculation worker */
+'use strict';
 
 function Mandel(cr, ci, limit) {
     var zr, zi, temp, r;
