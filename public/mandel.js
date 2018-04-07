@@ -4,11 +4,14 @@ window.onload = function() {
     var graph = document.getElementById('MandelCanvas');
     var PixelsBelowGraph = 0;       // we may display coordinates or some such below the graph later
     var ColorTable;
-    var Limit = 300;
+    var Job;
+    var Zoom = {
+        isActive: false
+    };
 
     function InitColorTable() {
         ColorTable = [];
-        for (var i=0; i < Limit; ++i) {
+        for (var i=0; i < Job.limit; ++i) {
             var r = (i + 50) & 255;
             var g = (i + 100) & 255;
             var b = i & 255;
@@ -19,6 +22,10 @@ window.onload = function() {
 
     function DrawPatch(context, msg) {
         var ver, hor, i, k, tall, count;
+
+        if (Zoom.isActive) {
+            context.putImageData(Zoom.buffer, 0, 0);
+        }
 
         ver = 0;
         hor = 0;
@@ -36,6 +43,10 @@ window.onload = function() {
                     ++hor;
                 }
             }
+        }
+
+        if (Zoom.isActive) {
+            Zoom.buffer = context.getImageData(0, 0, context.width, context.height);
         }
     }
 
@@ -104,6 +115,20 @@ window.onload = function() {
         }
     }
 
+    function CloneJob(job) {
+        return {
+            x1:     job.x1,
+            y1:     job.y1,
+            x2:     job.x2,
+            y2:     job.y2,
+            left:   job.left,
+            top:    job.top,
+            limit:  job.limit,
+            width:  job.width,
+            height: job.height
+        };
+    }
+
     function FixAspect(job) {
         // Adjust the math coordinates outward as needed
         // so that the screen aspect ratio matches the math aspect ratio.
@@ -142,21 +167,12 @@ window.onload = function() {
             DrawPatch(context, e.data);
         }
 
+        Job.width = graph.width;
+        Job.height = graph.height;
         var context = graph.getContext('2d');
 
-        var job = {
-            x1: -2.0,
-            y1: -1.2,
-            x2: +0.5,
-            y2: +1.2,
-            left: 0,
-            top: 0,
-            width: graph.width,
-            height: graph.height,
-            limit: Limit
-        };
-
-        SendJob(context, engine, FixAspect(job));
+        Zoom.buffer = null;
+        SendJob(context, engine, FixAspect(CloneJob(Job)));
     }
 
     function ResizeGraph() {
@@ -172,10 +188,73 @@ window.onload = function() {
         }
     }
 
+    function BeginZoomRect(evt) {
+        Zoom.isActive = true;
+        Zoom.xInit = evt.clientX;
+        Zoom.yInit = evt.clientY;
+        Zoom.box = null;
+    }
+
+    function UpdateZoomRect(evt) {
+        if (Zoom.isActive && evt.clientX > Zoom.xInit && evt.clientY > Zoom.yInit) {
+            var context = graph.getContext('2d');
+
+            if (Zoom.buffer) {
+                // Erase any previous box we drew.
+                context.putImageData(Zoom.buffer, 0, 0);
+            } else {
+                // Capture pristine state of the screen before drawing box on top.
+                Zoom.buffer = context.getImageData(0, 0, graph.width, graph.height);
+            }
+
+            // Adjust the box dimensions to match the aspect ratio of the canvas.
+            Zoom.box = {};
+            Zoom.box.width = evt.clientX - Zoom.xInit;
+            Zoom.box.height = Math.round(Zoom.box.width * (graph.height / graph.width));
+
+            // Draw the box.
+            context.strokeStyle = 'rgb(255,255,255)';
+            context.strokeRect(Zoom.xInit, Zoom.yInit, Zoom.box.width, Zoom.box.height);
+        }
+    }
+
+    function EndZoomRect(evt) {
+        if (Zoom.isActive) {
+            Zoom.isActive = false;
+            // Calculate new math coordinates and redraw.
+            FixAspect(Job);
+            var dx = (Job.x2 - Job.x1) / (graph.width - 1);
+            var dy = (Job.y2 - Job.y1) / (graph.height - 1);
+            var x1 = Job.x1 + Zoom.xInit*dx;
+            var x2 = Job.x1 + evt.clientX*dx;
+            var y1 = Job.y1 + Zoom.yInit*dy;
+            var y2 = Job.y1 + evt.clientY*dy;
+            Job.x1 = x1;
+            Job.x2 = x2;
+            Job.y1 = y1;
+            Job.y2 = y2;
+
+            UpdateDisplay();
+        }
+    }
+
     function Init() {
+        Job = {
+            x1: -2.0,
+            y1: -1.2,
+            x2: +0.5,
+            y2: +1.2,
+            left: 0,
+            top: 0,
+            limit: 3000
+        };
+
         InitColorTable();
         ResizeGraph();
         window.addEventListener('resize', ResizeGraph);
+        graph.onmousedown = BeginZoomRect;
+        graph.onmouseup = EndZoomRect;
+        graph.onmousemove = UpdateZoomRect;
     }
 
     Init();

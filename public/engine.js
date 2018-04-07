@@ -44,8 +44,6 @@ function Mandel(cr, ci, limit) {
     zi = ci;
     var n;
     for (n=0; (n < limit) && (zr*zr + zi*zi <= 4.0); ++n) {
-        // z <-- z^2 + c
-        // (a+bi)^2 = (a^2 - b^2) + i*(2*a*b)
         temp = (zr*zr - zi*zi) + cr;
         zi = (2*zr*zi) + ci;
         zr = temp;
